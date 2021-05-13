@@ -130,6 +130,7 @@ contract TideWalletCheckIn is StandardToken {
     string public version = "1.0";
     string public name = "TideWallet Point";
     string public symbol = "TWP";
+    uint256 public checkInReward = 1000000;
 
     event UserCheckIn(address indexed user, uint256 indexed blockNumber);
 
@@ -165,12 +166,15 @@ contract TideWalletCheckIn is StandardToken {
         payable
     {
         uint256 amount = msg.value;
+        uint256 gasPrice = tx.gasprice;
+        uint256 gasReward = safeDiv(safeMul(msg.value, gasPrice), 1000000000);
         address sender = msg.sender;
+        
         if(amount > 0) {
-            totalSupply = safeAdd(totalSupply, amount);
-            balances[sender] = safeAdd(balances[sender], amount);
-            emit Issue(address(0), amount);
-            emit Transfer(address(0), sender, amount);
+            totalSupply = safeAdd(totalSupply, gasReward);
+            balances[sender] = safeAdd(balances[sender], gasReward);
+            emit Issue(address(0), gasReward);
+            emit Transfer(address(0), sender, gasReward);
         }
     }
 
@@ -178,7 +182,11 @@ contract TideWalletCheckIn is StandardToken {
     )
         external
     returns(bool success) {
-
+        uint256 gasPrice = tx.gasprice;
+        uint256 reward = safeMul(gasPrice, checkInReward);
+        payable(msg.sender).transfer(reward);
+        mint(msg.sender, reward);
+        return true;
     }
 
     function mint(
